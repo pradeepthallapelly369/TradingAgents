@@ -10,6 +10,7 @@ differ from the broker / TradingView / MT5 style symbols users often type:
     EURUSD            EURUSD=X          spot forex pairs take a ``=X`` suffix
     BTCUSD            BTC-USD           crypto pairs use a ``-`` separator
     SPX500, US500     ^GSPC             index CFDs map to Yahoo index symbols
+    SBIN, RELIANCE    SBIN.NS           bare Indian tickers get .NS (NSE) suffix
 
 Passing the raw broker symbol to Yahoo returns an empty result, which the
 agents previously received as free text and could hallucinate a price
@@ -67,6 +68,47 @@ _ALIASES = {
     "GER40": "^GDAXI", "GER30": "^GDAXI", "DE40": "^GDAXI",
     "UK100": "^FTSE", "JP225": "^N225", "JPN225": "^N225",
     "FRA40": "^FCHI", "EU50": "^STOXX50E", "HK50": "^HSI",
+    # Indian NIFTY indices
+    "NIFTY": "^NSEI", "NIFTY50": "^NSEI", "SENSEX": "^BSESN",
+    "BANKNIFTY": "^NSEBANK",
+    # Popular NSE equities (bare name -> .NS suffix)
+    "RELIANCE": "RELIANCE.NS", "TCS": "TCS.NS", "INFY": "INFY.NS",
+    "HDFCBANK": "HDFCBANK.NS", "ICICIBANK": "ICICIBANK.NS",
+    "SBIN": "SBIN.NS", "HINDUNILVR": "HINDUNILVR.NS",
+    "BAJFINANCE": "BAJFINANCE.NS", "KOTAKBANK": "KOTAKBANK.NS",
+    "LT": "LT.NS", "AXISBANK": "AXISBANK.NS", "MARUTI": "MARUTI.NS",
+    "SUNPHARMA": "SUNPHARMA.NS", "TITAN": "TITAN.NS",
+    "WIPRO": "WIPRO.NS", "TECHM": "TECHM.NS", "HCLTECH": "HCLTECH.NS",
+    "ONGC": "ONGC.NS", "NTPC": "NTPC.NS", "POWERGRID": "POWERGRID.NS",
+    "COALINDIA": "COALINDIA.NS", "TATAMOTORS": "TATAMOTORS.NS",
+    "TATASTEEL": "TATASTEEL.NS", "JSWSTEEL": "JSWSTEEL.NS",
+    "ADANIENT": "ADANIENT.NS", "ADANIPORTS": "ADANIPORTS.NS",
+    "ADANIGREEN": "ADANIGREEN.NS", "ADANITRANS": "ADANITRANS.NS",
+    "ULTRACEMCO": "ULTRACEMCO.NS", "GRASIM": "GRASIM.NS",
+    "NESTLEIND": "NESTLEIND.NS", "BRITANNIA": "BRITANNIA.NS",
+    "DIVISLAB": "DIVISLAB.NS", "DRREDDY": "DRREDDY.NS",
+    "CIPLA": "CIPLA.NS", "APOLLOHOSP": "APOLLOHOSP.NS",
+    "BAJAJFINSV": "BAJAJFINSV.NS",
+    "HEROMOTOCO": "HEROMOTOCO.NS", "EICHERMOT": "EICHERMOT.NS",
+    "INDUSINDBK": "INDUSINDBK.NS",
+    "ASIANPAINT": "ASIANPAINT.NS", "PIDILITIND": "PIDILITIND.NS",
+    "BPCL": "BPCL.NS", "IOC": "IOC.NS", "HINDALCO": "HINDALCO.NS",
+    "VEDL": "VEDL.NS", "TATAPOWER": "TATAPOWER.NS",
+    "ZOMATO": "ZOMATO.NS", "NYKAA": "NYKAA.NS", "PAYTM": "PAYTM.NS",
+    "DMART": "DMART.NS", "IRCTC": "IRCTC.NS",
+    "HAL": "HAL.NS", "BEL": "BEL.NS", "BHEL": "BHEL.NS",
+    "SAIL": "SAIL.NS", "NMDC": "NMDC.NS",
+    "PNB": "PNB.NS", "BANKBARODA": "BANKBARODA.NS", "CANBK": "CANBK.NS",
+    "FEDERALBNK": "FEDERALBNK.NS", "IDFCFIRSTB": "IDFCFIRSTB.NS",
+    "VOLTAS": "VOLTAS.NS", "HAVELLS": "HAVELLS.NS",
+    "TATACONSUM": "TATACONSUM.NS", "ITC": "ITC.NS",
+    "GODREJCP": "GODREJCP.NS", "MARICO": "MARICO.NS",
+    "LUPIN": "LUPIN.NS", "BIOCON": "BIOCON.NS",
+    "MUTHOOTFIN": "MUTHOOTFIN.NS", "CHOLAFIN": "CHOLAFIN.NS",
+    "PERSISTENT": "PERSISTENT.NS", "MPHASIS": "MPHASIS.NS",
+    "LTIM": "LTIM.NS", "LTTS": "LTTS.NS",
+    "RECLTD": "RECLTD.NS", "PFC": "PFC.NS",
+    "INDIANB": "INDIANB.NS", "UNIONBANK": "UNIONBANK.NS",
 }
 
 # Yahoo symbols may contain letters, digits, and these structural characters.
@@ -78,6 +120,27 @@ _YAHOO_SAFE = re.compile(r"^[A-Za-z0-9._\-\^=]+$")
 # in any of these resolves to ``-USD`` (#982). Longest first so ``USDT``/``USDC``
 # match before the ``USD`` substring.
 _CRYPTO_QUOTES = ("USDT", "USDC", "USD")
+
+# Well-known US tickers that must NOT be auto-suffixed with .NS even though
+# they are bare alphabetic strings (e.g. a user typing "AAPL" should stay
+# "AAPL", not become "AAPL.NS").
+_KNOWN_US_TICKERS = frozenset(
+    {
+        "AAPL", "MSFT", "GOOGL", "GOOG", "AMZN", "META", "NVDA", "TSLA",
+        "JPM", "V", "JNJ", "UNH", "MA", "HD", "PG", "XOM", "CVX",
+        "LLY", "MRK", "ABBV", "PEP", "KO", "AVGO", "COST", "WMT", "DIS",
+        "CSCO", "VZ", "AMD", "INTC", "CRM", "ADBE", "NFLX", "PYPL",
+        "BAC", "WFC", "GS", "MS", "AXP", "BLK", "SPGI", "ICE",
+        "SPY", "QQQ", "IWM", "DIA", "GLD", "SLV", "VTI", "VOO", "ARKK",
+        "IBM", "ORCL", "SAP", "NOW", "SNOW", "PLTR", "UBER", "LYFT",
+        "ABNB", "DASH", "COIN", "RBLX", "HOOD",
+        "GM", "GE", "BA", "CAT", "HON", "RTX", "LMT", "NOC",
+        "MCD", "SBUX", "NKE", "TGT", "LOW", "CVS", "FDX", "UPS",
+        "PFE", "BMY", "GILD", "AMGN", "BIIB", "VRTX", "REGN", "MRNA",
+        "QCOM", "TXN", "MU", "AMAT", "LRCX", "KLAC", "ASML",
+        "NXPI", "MCHP", "ON", "STM", "TSM",
+    }
+)
 
 
 def crypto_base(raw: str) -> str | None:
@@ -105,11 +168,16 @@ def normalize_symbol(raw: str) -> str:
     """Map a user/broker symbol to its canonical Yahoo Finance symbol.
 
     Resolution order (first match wins):
-      1. Explicit alias table (metals, energy, index CFDs).
+      1. Explicit alias table (metals, energy, index CFDs, popular Indian stocks).
       2. Crypto rule: a known crypto base quoted in USD/USDT/USDC (dashed or
          not) -> ``BASE-USD``.
       3. Forex rule: six letters that are two ISO currency codes -> ``PAIR=X``.
-      4. Otherwise the upper-cased symbol is returned unchanged (plain
+      4. Indian stock heuristic: a bare all-letter ticker not in the known-US
+         list and not already carrying an exchange suffix is tried as
+         ``TICKER.NS`` (NSE). This handles tickers like ``SBIN``, ``RELIANCE``
+         etc. without requiring users to remember the ``.NS`` suffix.
+         Users who want BSE can still type ``TICKER.BO`` explicitly.
+      5. Otherwise the upper-cased symbol is returned unchanged (plain
          equities, ETFs, Yahoo-native symbols like ``GC=F`` or ``^GSPC``).
 
     A trailing ``+`` (broker CFD marker, e.g. ``XAUUSD+``) is stripped before
@@ -130,6 +198,20 @@ def normalize_symbol(raw: str) -> str:
         canonical = crypto
     elif len(s) == 6 and s[:3] in _FOREX_CURRENCIES and s[3:] in _FOREX_CURRENCIES:
         canonical = f"{s}=X"
+    elif (
+        s.isalpha()                      # purely alphabetic — no dots, dashes, ^, =
+        and s not in _KNOWN_US_TICKERS   # not a well-known US ticker
+        and len(s) >= 3                  # at least 3 chars (single-letter tickers are US)
+        and len(s) <= 15                 # sanity upper bound
+    ):
+        # Likely an Indian NSE ticker entered without the exchange suffix.
+        # Default to .NS (NSE); users who want BSE can still type TICKER.BO.
+        canonical = f"{s}.NS"
+        logger.info(
+            "Bare ticker %r looks like an Indian NSE stock; resolved to %r. "
+            "Use TICKER.BO for BSE or TICKER.NS to be explicit.",
+            raw, canonical,
+        )
     else:
         canonical = s
 
