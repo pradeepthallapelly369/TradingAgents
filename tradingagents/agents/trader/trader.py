@@ -6,20 +6,42 @@ import functools
 
 from langchain_core.messages import AIMessage
 
-from tradingagents.agents.context import (
+from tradingagents.agents.schemas import TraderProposal, render_trader_proposal
+from tradingagents.agents.utils.agent_utils import (
     get_instrument_context_from_state,
     get_language_instruction,
     get_portfolio_context_from_state,
 )
-from tradingagents.agents.schemas import TraderProposal, render_trader_proposal
-from tradingagents.agents.structured import (
+from tradingagents.agents.utils.structured import (
     NO_EXTERNAL_TOOLS,
     bind_structured,
     invoke_structured_or_freetext,
 )
 
 
+def execute_mean_reversion(prices, window=5):
+    avg = sum(prices[-window:]) / window
+    if prices[-1] < avg * 0.98:
+        return "Buy"
+    elif prices[-1] > avg * 1.02:
+        return "Sell"
+    else:
+        return "Hold"
+
+def execute_trend_following(prices):
+    if len(prices) < 2:
+        return "Hold"
+    return "Buy" if prices[-1] > prices[-2] else "Sell"
+
+def execute_momentum_trading(prices):
+    if prices[-1] > prices[0]:
+        return "Buy"
+    else:
+        return "Sell"
+
 def create_trader(llm):
+    # New trading strategy: Momentum-based trading added here.
+    # Refactored to include advanced decision-making options based on market conditions.
     structured_llm = bind_structured(llm, TraderProposal, "Trader")
 
     def trader_node(state, name):

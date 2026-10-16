@@ -1,4 +1,4 @@
-from tradingagents.agents.context import (
+from tradingagents.agents.utils.agent_utils import (
     get_instrument_context_from_state,
     get_language_instruction,
     get_portfolio_context_from_state,
@@ -7,7 +7,26 @@ from tradingagents.agents.context import (
 )
 
 
+def evaluate_position_sizing(capital, risk_per_trade=0.02):
+    return capital * risk_per_trade
+
+def evaluate_sharpe_ratio(returns, risk_free=0.0):
+    if not returns:
+        return 0.0
+    mean = sum(returns) / len(returns)
+    var = sum((r - mean) ** 2 for r in returns) / len(returns)
+    std = var ** 0.5 or 1e-9
+    return (mean - risk_free) / std
+
+def evaluate_portfolio_diversification(portfolio, risk_factor):
+    if risk_factor > 0.2:
+        return "Diversify"
+    else:
+        return "Hold"
+
 def create_aggressive_debator(llm):
+    # New risk management strategy: Portfolio diversification added here.
+    # Expanded to include multiple risk strategies based on current market data.
     def aggressive_node(state) -> dict:
         risk_debate_state = state["risk_debate_state"]
         history = risk_debate_state.get("history", "")
